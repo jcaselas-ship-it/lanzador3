@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lanzador de Aplicaciones — JCaselas</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-primary:#0d1117; --bg-secondary:#161b22; --border:#30363d;
+  --text-primary:#c9d1d9; --text-secondary:#8b949e; --accent:#58a6ff;
+}
+body{font-family:'Inter',sans-serif; background:var(--bg-primary); color:var(--text-primary);}
+.program-card{transition:transform .15s ease, box-shadow .15s ease; cursor:pointer; user-select:none; border:1px solid rgba(255,255,255,.08);}
+.program-card:hover{transform:translateY(-3px); box-shadow:0 10px 15px rgba(0,0,0,.4);}
+.program-card:active{transform:translateY(0); box-shadow:none;}
+.icon-fa{font-size:1.5rem; color:#fff;}
+@media (min-width:640px){.icon-fa{font-size:2rem;}}
+.filter-btn{background:var(--bg-secondary); border:1px solid var(--border); color:var(--text-secondary);}
+.filter-btn.active{border-color:var(--accent); color:var(--accent);}
+#search-input{background:var(--bg-secondary); border:1px solid var(--border); color:var(--text-primary);}
+#search-input::placeholder{color:var(--text-secondary);}
+#mobile-menu.open{display:flex;}
+.copyright-container{position:relative; display:inline-block; cursor:pointer;}
+.copyright-tooltip{visibility:hidden; background:#333; color:#fff; text-align:center; border-radius:6px; padding:5px 10px; position:absolute; z-index:1; bottom:125%; left:50%; transform:translateX(-50%); white-space:nowrap; opacity:0; transition:opacity .3s, visibility .3s;}
+.copyright-tooltip.visible{visibility:visible; opacity:1;}
+.falling-piece{position:fixed; top:-40px; font-size:2rem; pointer-events:none; z-index:9999; animation:fall linear forwards;}
+@keyframes fall{ from{opacity:1;} to{transform:translateY(110vh) rotate(360deg); opacity:.3;} }
+</style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+
+<header class="text-center mb-6 sm:mb-8 w-full max-w-3xl mx-auto px-2">
+  <h1 id="main-title" class="text-2xl sm:text-4xl font-extrabold mb-2 text-white">Lanzador de Aplicaciones</h1>
+  <p class="text-sm sm:text-lg" style="color:var(--text-secondary)">Toca una tarjeta para abrir el juego o app en una nueva pestaña.</p>
+</header>
+
+<div class="w-full max-w-4xl mb-5 sm:mb-6 px-2">
+  <div class="flex items-center gap-2">
+    <button id="menu-toggle" class="sm:hidden shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-base" style="background:var(--bg-secondary); border:1px solid var(--border); color:var(--text-primary)">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="hidden sm:flex flex-wrap gap-2 items-center">
+      <button class="filter-btn active px-4 py-1.5 rounded-full text-sm font-semibold" data-cat="todos">Todos</button>
+      <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold" data-cat="educativos">Educativos</button>
+      <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold" data-cat="variantes">Variantes</button>
+      <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold" data-cat="numeros">Números</button>
+      <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold" data-cat="otros">Otros</button>
+    </div>
+    <input id="search-input" type="text" placeholder="Buscar…" class="flex-1 sm:flex-none sm:w-56 px-4 py-2 sm:py-1.5 rounded-full text-sm outline-none">
+  </div>
+  <div id="mobile-menu" class="hidden sm:hidden flex-col gap-2 mt-2 p-3 rounded-lg" style="background:var(--bg-secondary); border:1px solid var(--border)">
+    <button class="filter-btn active px-4 py-2 rounded-full text-sm font-semibold text-left" data-cat="todos">Todos</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-sm font-semibold text-left" data-cat="educativos">Educativos</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-sm font-semibold text-left" data-cat="variantes">Variantes</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-sm font-semibold text-left" data-cat="numeros">Números</button>
+    <button class="filter-btn px-4 py-2 rounded-full text-sm font-semibold text-left" data-cat="otros">Otros</button>
+  </div>
+</div>
+
+<main id="programs-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 w-full max-w-5xl px-2"></main>
+
+<p id="empty-msg" class="hidden text-center mt-10" style="color:var(--text-secondary)">No se encontraron juegos con ese filtro.</p>
+
+<div id="modal-message" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
+  <div class="p-6 rounded-lg shadow-xl max-w-sm w-full border" style="background:var(--bg-secondary); border-color:var(--border)">
+    <h3 id="modal-title" class="text-xl font-bold mb-4" style="color:var(--accent)">Aviso</h3>
+    <p id="modal-text" class="mb-6" style="color:var(--text-secondary)"></p>
+    <button onclick="document.getElementById('modal-message').classList.add('hidden')" class="w-full font-semibold py-2 rounded-lg" style="background:var(--accent); color:var(--bg-primary)">Aceptar</button>
+  </div>
+</div>
+
+<div class="copyright-container mt-10 mb-4">
+  <i class="fa-regular fa-copyright text-xl" style="color:var(--text-secondary)" onclick="copyrightClick()"></i>
+  <div id="copyright-tooltip" class="copyright-tooltip">JCaselas + IA · 2026</div>
+</div>
+
+<script>
+const programs = [
+  // Educativos (Lanzador Chess MiniGames)
+  { name:"Memory Chess Pieces", url:"https://jcaselas-ship-it.github.io/memorychesspieces/", cat:"educativos", icon:"fa-solid fa-chess-board", color:"bg-teal-700" },
+  { name:"Memory Piezas Movimiento", url:"https://jcaselas-ship-it.github.io/memorychesspiezasmove/", cat:"educativos", icon:"fa-solid fa-route", color:"bg-teal-700" },
+  { name:"Memory Piezas Puntos", url:"https://jcaselas-ship-it.github.io/MatchPiezasPuntos/", cat:"educativos", icon:"fa-solid fa-star", color:"bg-teal-700" },
+  { name:"Laberinto del Rey", url:"https://jcaselas-ship-it.github.io/ChessMaze/", cat:"educativos", icon:"fa-solid fa-chess-king", color:"bg-amber-600" },
+  { name:"Reto Dama", url:"https://jcaselas-ship-it.github.io/reto-dama/", cat:"educativos", icon:"fa-solid fa-chess-queen", color:"bg-rose-700" },
+  { name:"Caballo come estrellas", url:"https://jcaselas-ship-it.github.io/KingthTour/", cat:"educativos", icon:"fa-solid fa-chess-knight", color:"bg-purple-700" },
+  { name:"Recorrido Caballo", url:"https://jcaselas-ship-it.github.io/RecorridoCaballo/", cat:"educativos", icon:"fa-solid fa-chess-knight", color:"bg-purple-700" },
+  { name:"Doble Dama", url:"https://jcaselas-ship-it.github.io/AtaqueDobleDama/", cat:"educativos", icon:"fa-solid fa-chess-queen", color:"bg-rose-700" },
+  { name:"N Damas", url:"https://jcaselas-ship-it.github.io/NDamas/", cat:"educativos", icon:"fa-solid fa-chess-queen", color:"bg-rose-700" },
+  { name:"Reinas del Tablero", url:"https://jcaselas-ship-it.github.io/ReinasTablero/", cat:"educativos", icon:"fa-solid fa-chess-queen", color:"bg-rose-700" },
+  { name:"Maxi Puntos", url:"https://jcaselas-ship-it.github.io/Maxipuntos/", cat:"educativos", icon:"fa-solid fa-star", color:"bg-teal-700" },
+  { name:"Ataques Piezas", url:"https://jcaselas-ship-it.github.io/Piezasatacadas/", cat:"educativos", icon:"fa-solid fa-chess-board", color:"bg-teal-700" },
+  { name:"Chess Match", url:"https://jcaselas-ship-it.github.io/ChessMatchInfinity/", cat:"educativos", icon:"fa-solid fa-chess-board", color:"bg-teal-700" },
+  { name:"Serpiente Ajedrez", url:"https://jcaselas-ship-it.github.io/snakechess/", cat:"educativos", icon:"fa-solid fa-chess", color:"bg-teal-700" },
+  { name:"Solitary Chess", url:"https://jcaselas-ship-it.github.io/solitarychess/", cat:"educativos", icon:"fa-solid fa-puzzle-piece", color:"bg-fuchsia-700" },
+  { name:"3-4-5 en Línea", url:"https://jcaselas-ship-it.github.io/345linea/", cat:"educativos", icon:"fa-solid fa-grip-lines", color:"bg-teal-700" },
+  // Variantes
+  { name:"Chess Caos v2", url:"https://jcaselas-ship-it.github.io/chesscaosv2/", cat:"variantes", icon:"fa-solid fa-chess-board", color:"bg-teal-700" },
+  { name:"Caballos Inmortales", url:"https://jcaselas-ship-it.github.io/caballosinmortales/", cat:"variantes", icon:"fa-solid fa-chess-knight", color:"bg-purple-700" },
+  { name:"Torres Láser", url:"https://jcaselas-ship-it.github.io/torreslaser/", cat:"variantes", icon:"fa-solid fa-bolt", color:"bg-cyan-700" },
+  { name:"Tablero del Abismo", url:"https://jcaselas-ship-it.github.io/tableroabismo/", cat:"variantes", icon:"fa-solid fa-fire", color:"bg-orange-800" },
+  { name:"Carrera de Peones", url:"https://jcaselas-ship-it.github.io/carreradepeones/", cat:"variantes", icon:"fa-solid fa-chess-pawn", color:"bg-blue-700" },
+  // Números
+  { name:"Suma10", url:"https://jcaselas-ship-it.github.io/suma10v4/", cat:"numeros", icon:"fa-solid fa-calculator", color:"bg-cyan-700" },
+  { name:"Suma21", url:"https://jcaselas-ship-it.github.io/suma21/", cat:"numeros", icon:"fa-solid fa-calculator", color:"bg-pink-700" },
+  { name:"21", url:"https://jcaselas-ship-it.github.io/21/", cat:"numeros", icon:"fa-solid fa-dice", color:"bg-red-700" },
+  { name:"Número Objetivo", url:"https://jcaselas-ship-it.github.io/numeroobjetivo/", cat:"numeros", icon:"fa-solid fa-bullseye", color:"bg-violet-700" },
+  { name:"Multiplica 100", url:"https://jcaselas-ship-it.github.io/multiplica100/", cat:"numeros", icon:"fa-solid fa-xmark", color:"bg-lime-700" },
+  { name:"Adivina la Multiplicación", url:"https://jcaselas-ship-it.github.io/adivinamulti/", cat:"numeros", icon:"fa-solid fa-magnifying-glass", color:"bg-sky-700" },
+  { name:"Bosque de Números", url:"https://jcaselas-ship-it.github.io/bosque-de-numeros/", cat:"numeros", icon:"fa-solid fa-tree", color:"bg-green-700" },
+  { name:"Área y Perímetro", url:"https://jcaselas-ship-it.github.io/areayperimetro/", cat:"numeros", icon:"fa-solid fa-ruler-combined", color:"bg-yellow-600" },
+  // Otros
+  { name:"Battle Life", url:"https://jcaselas-ship-it.github.io/battlelife/", cat:"otros", icon:"fa-solid fa-shield-halved", color:"bg-orange-700" },
+  { name:"Ultimate Tic-Tac-Toe", url:"https://jcaselas-ship-it.github.io/tictactoeultimate/", cat:"otros", icon:"fa-solid fa-hashtag", color:"bg-emerald-700" },
+  { name:"Dungeon Depths v4", url:"https://jcaselas-ship-it.github.io/DungeonDepthsv4/", cat:"otros", icon:"fa-solid fa-dungeon", color:"bg-indigo-700" },
+];
+
+let activeCat = "todos";
+let query = "";
+let eggFired = false;
+
+function showModal(title, text){
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  const m = document.getElementById('modal-message');
+  m.classList.remove('hidden'); m.classList.add('flex');
+}
+
+function executeProgram(url, name){
+  try{
+    if(!url.startsWith('http')) throw new Error("URL inválida");
+    window.open(url, '_blank');
+  }catch(e){
+    showModal("Error de enlace", `No se pudo abrir "${name}". URL: ${url}`);
+  }
+}
+
+function render(){
+  const container = document.getElementById('programs-container');
+  const list = programs.filter(p =>
+    (activeCat === "todos" || p.cat === activeCat) &&
+    p.name.toLowerCase().includes(query.toLowerCase())
+  );
+  container.innerHTML = '';
+  document.getElementById('empty-msg').classList.toggle('hidden', list.length > 0);
+
+  list.forEach(p => {
+    const card = document.createElement('div');
+    card.className = `program-card p-3 sm:p-4 rounded-xl flex flex-col items-center justify-center gap-2 sm:gap-3 text-center shadow-lg min-h-[100px] sm:min-h-[120px] ${p.color}`;
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.onclick = () => executeProgram(p.url, p.name);
+    card.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); executeProgram(p.url, p.name);} };
+    card.innerHTML = `<i class="${p.icon} icon-fa"></i><h2 class="text-base sm:text-lg font-semibold text-white leading-tight">${p.name}</h2>`;
+    container.appendChild(card);
+  });
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeCat = btn.dataset.cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === activeCat));
+    render();
+    document.getElementById('mobile-menu').classList.remove('open');
+  });
+});
+
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('mobile-menu').classList.toggle('open');
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  query = e.target.value;
+  const trimmed = query.trim().toLowerCase();
+  if(trimmed === 'jcaselas'){
+    if(!eggFired){
+      eggFired = true;
+      showModal('♟️ ¡Easter egg encontrado!', 'Abriendo el perfil FIDE de JCaselas…');
+      setTimeout(() => window.open('https://ratings.fide.com/profile/2202484', '_blank'), 900);
+    }
+  } else {
+    eggFired = false;
+  }
+  render();
+});
+
+function toggleCopyrightTooltip(){
+  const t = document.getElementById('copyright-tooltip');
+  t.classList.toggle('visible');
+  if(t.classList.contains('visible')) setTimeout(()=>t.classList.remove('visible'), 3000);
+}
+
+let copyrightClicks = 0, copyrightTimer = null;
+function copyrightClick(){
+  toggleCopyrightTooltip();
+  copyrightClicks++;
+  clearTimeout(copyrightTimer);
+  copyrightTimer = setTimeout(() => { copyrightClicks = 0; }, 1500);
+  if(copyrightClicks === 7){
+    copyrightClicks = 0;
+    window.open('https://jcaselas-ship-it.github.io/PomodoroClock1APK/', '_blank');
+  }
+}
+
+function spawnFallingPieces(){
+  const symbols = ['♔','♕','♖','♗','♘','♙'];
+  const colors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899'];
+  for(let i = 0; i < 28; i++){
+    const el = document.createElement('span');
+    el.className = 'falling-piece';
+    el.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+    el.style.left = Math.random()*100 + 'vw';
+    el.style.color = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (2 + Math.random()*2) + 's';
+    el.style.animationDelay = (Math.random()*0.6) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+}
+
+let titleClicks = 0, titleTimer = null;
+document.getElementById('main-title').addEventListener('click', () => {
+  titleClicks++;
+  clearTimeout(titleTimer);
+  titleTimer = setTimeout(() => { titleClicks = 0; }, 1500);
+  if(titleClicks === 7){
+    titleClicks = 0;
+    spawnFallingPieces();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
