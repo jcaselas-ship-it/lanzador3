@@ -85,6 +85,8 @@ body{font-family:'Inter',sans-serif; background:var(--bg-primary); color:var(--t
 const programs = [
   // Educativos (Lanzador Chess MiniGames)
   { name:"Aprende ajedrez con Peoni", url:"https://jcaselas-ship-it.github.io/ajedrezconpeoni/", cat:"educativos", icon:"fa-solid fa-chess-pawn", color:"bg-amber-600" },
+  // Oculto: solo aparece al buscar «peoni»
+  { name:"Peoni · Escuela Técnica de Ajedrez", url:"https://jcaselas-ship-it.github.io/ajedrezconpeonietx/", cat:"educativos", icon:"fa-solid fa-chess-pawn", color:"bg-sky-700", secret:"peoni" },
   { name:"Memory Chess Pieces", url:"https://jcaselas-ship-it.github.io/memorychesspieces/", cat:"educativos", icon:"fa-solid fa-chess-board", color:"bg-teal-700" },
   { name:"Memory Piezas Movimiento", url:"https://jcaselas-ship-it.github.io/memorychesspiezasmove/", cat:"educativos", icon:"fa-solid fa-route", color:"bg-teal-700" },
   { name:"Memory Piezas Puntos", url:"https://jcaselas-ship-it.github.io/MatchPiezasPuntos/", cat:"educativos", icon:"fa-solid fa-star", color:"bg-teal-700" },
@@ -153,7 +155,7 @@ function render(){
   const container = document.getElementById('programs-container');
   const list = programs.filter(p =>
     (activeCat === "todos" || p.cat === activeCat) &&
-    p.name.toLowerCase().includes(query.toLowerCase())
+    (p.secret ? query.trim().toLowerCase().includes(p.secret) : p.name.toLowerCase().includes(query.toLowerCase()))
   );
   container.innerHTML = '';
   document.getElementById('empty-msg').classList.toggle('hidden', list.length > 0);
