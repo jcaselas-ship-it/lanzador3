@@ -84,6 +84,7 @@ body{font-family:'Inter',sans-serif; background:var(--bg-primary); color:var(--t
 </div>
 
 <script>
+// cat: una sección ("numeros") o varias (["educativos","papel"])
 const programs = [
   // Educativos (Lanzador Chess MiniGames)
   { name:"Aprende ajedrez con Peoni", url:"https://jcaselas-ship-it.github.io/ajedrezconpeoni/", cat:"educativos", icon:"fa-solid fa-chess-pawn", color:"bg-amber-600" },
@@ -106,7 +107,7 @@ const programs = [
   { name:"Solitary Chess", url:"https://jcaselas-ship-it.github.io/solitarychess/", cat:"educativos", icon:"fa-solid fa-puzzle-piece", color:"bg-fuchsia-700" },
   { name:"Sudoku de ajedrez", url:"https://jcaselas-ship-it.github.io/sudokuchess/", cat:"educativos", icon:"fa-solid fa-table-cells", color:"bg-sky-700" },
   { name:"Mate en números", url:"https://jcaselas-ship-it.github.io/mateconnumeros/", cat:"educativos", icon:"fa-solid fa-chess-king", color:"bg-emerald-700" },
-  { name:"3-4-5 en Línea", url:"https://jcaselas-ship-it.github.io/345linea/", cat:"educativos", icon:"fa-solid fa-grip-lines", color:"bg-teal-700" },
+  { name:"3-4-5 en Línea", url:"https://jcaselas-ship-it.github.io/345linea/", cat:["educativos","papel"], icon:"fa-solid fa-grip-lines", color:"bg-teal-700" },
   // Variantes
   { name:"Chess Caos v2", url:"https://jcaselas-ship-it.github.io/chesscaosv2/", cat:"variantes", icon:"fa-solid fa-chess-board", color:"bg-teal-700" },
   { name:"Caballos Inmortales", url:"https://jcaselas-ship-it.github.io/caballosinmortales/", cat:"variantes", icon:"fa-solid fa-chess-knight", color:"bg-purple-700" },
@@ -160,7 +161,7 @@ function executeProgram(url, name){
 function render(){
   const container = document.getElementById('programs-container');
   const list = programs.filter(p =>
-    (activeCat === "todos" || p.cat === activeCat) &&
+    (activeCat === "todos" || [].concat(p.cat).includes(activeCat)) &&
     (p.secret ? p.secret.some(k => query.trim().toLowerCase().includes(k)) : p.name.toLowerCase().includes(query.toLowerCase()))
   );
   container.innerHTML = '';
